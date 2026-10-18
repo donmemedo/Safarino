@@ -1,0 +1,28 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports: ["8018:8000"]
+    environment:
+      DB_PATH: /data/safarino.db
+      TZ: Asia/Tehran
+      DEMO_OTP: "1"  # set to 0 once an SMS gateway sends the login codes
+    volumes: [db:/data]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://backend:8000
+    restart: unless-stopped
+    ports: ["3018:3000"]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db:
